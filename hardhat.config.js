@@ -1,6 +1,23 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ethers");
+require('@nomicfoundation/hardhat-toolbox');
+require("dotenv").config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.20",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.19", // Ensure this matches the imported library version
+      },
+      {
+        version: "0.8.20",
+      },
+    ],
+  },
+  networks: {
+    IntersectTestnet: {
+      url: process.env.AVALANCHE_URL,
+      chainId: 1612,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+  },
 };
