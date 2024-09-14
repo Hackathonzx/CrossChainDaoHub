@@ -1,24 +1,54 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "./CarbonCredit.sol";
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Marketplace {
+contract Marketplace is ReentrancyGuard, Ownable {
     CarbonCredit public carbonCredit;
+    AggregatorV3Interface internal priceFeed;
+
     uint256 public pricePerCredit;
+    uint256 public lastUpdateTime;
+    uint256 public constant UPDATE_INTERVAL = 1 hours;
 
-    constructor(address _carbonCreditAddress, uint256 _pricePerCredit) {
+    event CreditsPurchased(address buyer, uint256 amount, uint256 cost);
+    event CreditsSold(address seller, uint256 amount, uint256 payment);
+
+    constructor(address _carbonCreditAddress, address _priceFeedAddress) Ownable(msg.sender) {
         carbonCredit = CarbonCredit(_carbonCreditAddress);
-        pricePerCredit = _pricePerCredit;
+        priceFeed = AggregatorV3Interface(_priceFeedAddress);
+        updatePrice();
     }
 
-    function buyCredits(uint256 amount) external payable {
-        require(msg.value == amount * pricePerCredit, "Incorrect ETH amount");
-        carbonCredit.transfer(msg.sender, amount);
+    function updatePrice() public onlyOwner {
+        require(block.timestamp >= lastUpdateTime + UPDATE_INTERVAL, "Too soon to update");
+        (, int256 price,,,) = priceFeed.latestRoundData();
+        pricePerCredit = uint256(price);
+        lastUpdateTime = block.timestamp;
     }
 
-    function sellCredits(uint256 amount) external {
+    function buyCredits(uint256 amount) external payable nonReentrant {
+        uint256 cost = amount * pricePerCredit;
+        require(msg.value >= cost, "Insufficient payment");
+        
+        carbonCredit.transferFrom(address(this), msg.sender, amount);
+        
+        if (msg.value > cost) {
+            payable(msg.sender).transfer(msg.value - cost);
+        }
+        
+        emit CreditsPurchased(msg.sender, amount, cost);
+    }
+
+    function sellCredits(uint256 amount) external nonReentrant {
+        uint256 payment = amount * pricePerCredit;
+        
         carbonCredit.transferFrom(msg.sender, address(this), amount);
-        payable(msg.sender).transfer(amount * pricePerCredit);
+        payable(msg.sender).transfer(payment);
+        
+        emit CreditsSold(msg.sender, amount, payment);
     }
 }
