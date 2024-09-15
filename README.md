@@ -1,82 +1,92 @@
-# Cross-Chain Carbon Credit Marketplace
+## Cross-Chain Carbon Credit Marketplace
 
-## Overview
-The Cross-Chain Carbon Credit Marketplace is a decentralized platform for trading carbon credits across different blockchains. It leverages Chainlink CCIP for cross-chain communication, Chainlink Price Feeds for real-time pricing, and Chainlink Functions for verification.
+1. **Architecture Overview**
+**Project Description**
+The Cross-Chain Carbon Credit Marketplace is a decentralized platform that enables the buying, selling, and trading of carbon credits across multiple blockchains. The system utilizes Chainlink services for cross-chain interoperability, price feeds, and verification of carbon credits. The project aims to create a transparent, secure, and efficient marketplace for carbon credits.
 
-## Features
-- **Carbon Credit Token (CCT)**: ERC20 token representing carbon credits.
-- **Marketplace**: Platform for buying and selling carbon credits.
-- **Cross-Chain Transfers**: Handles transfers of carbon credits across different blockchains using Chainlink CCIP.
-- **Price Updates**: Uses Chainlink Automation to periodically update carbon credit prices.
-- **Testing**: Includes mock contracts and oracles for testing.
-- **MockOracle.sol**: Simulates off-chain data retrieval and verification
-Stores and provides project data and credit information
+**Solution Architecture**
+- **Blockchain Choice**: Avalanche for its high throughput, low transaction costs, and EVM compatibility.
+- **Cross-Chain Communication**: Chainlink CCIP (Cross-Chain Interoperability Protocol) for seamless interaction between different blockchains.
+- **Price Feeds**: Chainlink Price Feeds for real-time carbon credit pricing.
+- **Smart Contracts**: A suite of smart contracts to manage carbon credits, facilitate cross-chain transactions, and update prices.
 
-## Installation
-1. Clone the repository:
-    git clone <repository-url>
-    cd <repository-directory>
+2. **Installation and Setup**
+Prerequisites
+Node.js (v18 or later)
+npm or yarn
+Hardhat
+Metamask or another Web3 wallet
+Installation Steps
+Clone the Repository: git clone https://github.com/your-username/cross-chain-carbon-credit-marketplace.git
+cd cross-chain-carbon-credit-marketplace
 
-2. Install dependencies:
-    npm install
+Install Dependencies: npm install
 
-## Configuration
-Create a `.env` file in the root directory and add the following environment variables:
-```dotenv
-CCIP_ROUTER_ADDRESS=0x...
-LINK_TOKEN_ADDRESS=0x...
-AVALANCHE_CHAIN_ID=43113
-PRICE_FEED_ADDRESS=0x...
-SUBSCRIPTION_ID=...
-ORACLE_ADDRESS=0x...
+# Create a .env File 
+CPIP_ROUTER_ADDRESS=your_ccip_router_address
+LINK_TOKEN_ADDRESS=your_link_token_address
+AVALANCHE_CHAIN_ID=your_avalanche_chain_id
+PRICE_FEED_ADDRESS=your_price_feed_address
+SUBSCRIPTION_ID=your_subscription_id
+ORACLE_ADDRESS=your_oracle_address
 
+# Compile Contracts
+npx hardhat compile
 
-# Use of Chainlink Services
-Chainlink CCIP:
-Cross-Chain Functionality: Am using Chainlink CCIP to enable cross-chain transfers of carbon credits, which involves making state changes on the blockchain.
-Implementation: I have integrated the CrossChainHandler contract with CCIP to handle cross-chain transfers and mint/burn tokens.
-Chainlink Functions:
+# Deploy Contracts
+npx hardhat run ignition/modules/deploy.js --network IntersectTestnet
 
-Verification: You’re using Chainlink Functions to verify carbon credits via an external API. This includes making a state change by calling a function to update the verification status.
-Chainlink Price Feeds:
+# Run Tests
+npx hardhat test
 
-Pricing Mechanism: You are using Chainlink Price Feeds to determine the price of carbon credits, ensuring real-time pricing for transactions.
-Chainlink Automation:
+3. **Smart Contract Descriptions**
+**CarbonCredit.sol**
+Description: ERC20 token contract for Carbon Credit Tokens (CCT). Manages minting and burning of tokens.
+Key Functions:
+mint(address to, uint256 amount): Mints new CCT tokens.
+burn(address from, uint256 amount): Burns CCT tokens.
+**Marketplace.sol**
+Description: Manages the marketplace for buying and selling carbon credits. Integrates Chainlink Price Feeds for real-time pricing.
+Key Functions:
+listCredit(address seller, uint256 amount, uint256 price): Lists carbon credits for sale.
+buyCredit(address seller, uint256 amount): Buys listed carbon credits.
+**CrossChainHandler.sol**
+Description: Handles cross-chain transactions for carbon credits using Chainlink CCIP.
+Key Functions:
+transferCredit(address from, address to, uint256 amount): Initiates a cross-chain transfer of carbon credits.
+**MockCrossChainHandler.sol**
+Description: Simulates cross-chain transfers for testing purposes.
+Key Functions:
+simulateTransfer(address from, address to, uint256 amount): Simulates a cross-chain transfer.
+**MockOracle.sol**
+Description: Mock oracle contract for storing and retrieving project information and verifying carbon credits.
+Key Functions:
+setCreditInfo(address creditAddress, string info): Sets information for a carbon credit.
+**PriceUpdater.sol**
+Description: Updates the price of carbon credits periodically using Chainlink Automation.
+Key Functions:
+updatePrice(): Updates the current price of carbon credits.
 
-Price Updates: You’re leveraging Chainlink Automation (through PriceUpdater) to automatically update the carbon credit price at regular intervals.
+4. **Cross-Chain Messaging with Chainlink CCIP**
+**Overview**
+Chainlink CCIP is used to enable communication and transactions between different blockchains. In this project, it allows for the transfer of carbon credits across multiple chains.
 
-State Changes:
+**Implementation**
+Contract: CrossChainHandler.sol
+Chainlink Services: Utilizes CCIP for initiating and verifying cross-chain transactions.
 
-Contracts Making State Changes: Your contracts (CrossChainHandler, Marketplace, CarbonCredit) make state changes by minting/burning tokens, updating prices, and verifying credits.
-Chainlink Integration:
+**Setup**
+Deploy Chainlink CCIP Router: Ensure the CCIP Router address is set up in the .env file.
+Configure Cross-Chain Handlers: Deploy CrossChainHandler.sol with the appropriate CCIP Router address.
 
-CCIP: Your CrossChainHandler contract uses Chainlink CCIP to facilitate cross-chain transfers.
-Functions: Your Marketplace contract uses Chainlink Functions for verifying carbon credits.
-Price Feeds: Your Marketplace contract updates the price of credits using Chainlink Price Feeds.
-Automation: The PriceUpdater contract uses Chainlink Automation to manage price updates.
+5. **Usage Instructions**
+Interacting with the Marketplace
+Listing Carbon Credits: Use the listCredit function to list your carbon credits for sale.
+Purchasing Carbon Credits: Use the buyCredit function to purchase listed carbon credits.
+Cross-Chain Transfers
+Initiate Transfer: Use the transferCredit function in CrossChainHandler.sol to initiate a cross-chain transfer of carbon credits.
+Price Updates
+Update Prices: The PriceUpdater contract automatically updates prices at regular intervals.
 
-# Dependencies and Installation
-# Dependencies:
-
-
-# Installation:
-
-
-# Usage
-
-# Contributing
-- Fork the Repository:
-- Create a New Branch:
-git checkout -b feature/your-feature
-- Make Changes and Commit:
-git add .
-git commit -m "Add feature"
-- Push Changes:
-git push origin feature/your-feature
-
-# License
-[MIT License]
-
-# Acknowledgments
-futhmah456@gmail.com
-nathfavour02@gmail.com
+**License**
+This project is open-source and licensed under the MIT License. Feel free to use, modify, and distribute the code as per the license terms.
