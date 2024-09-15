@@ -1,0 +1,30 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "name": "Project A",
+      "description": "Description for Project A",
+      "estimatedPrice": 1000,
+      "estimatedAnnualEmissionReduction": 5000
+    },
+    {
+      "id": 2,
+      "name": "Project B",
+      "description": "Description for Project B",
+      "estimatedPrice": 2000,
+      "estimatedAnnualEmissionReduction": 10000
+    }
+  ],
+  "credits": [
+    {
+      "projectId": 1,
+      "amount": 100,
+      "date": "2024-09-15"
+    },
+    {
+      "projectId": 2,
+      "amount": 200,
+      "date": "2024-09-16"
+    }
+  ]
+}
