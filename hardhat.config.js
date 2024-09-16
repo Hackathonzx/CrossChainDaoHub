@@ -7,7 +7,9 @@
 
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
-// require("@chainlink/hardhat-chainlink");
+//require("@nomiclabs/hardhat-ethers");
+require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-ignition");
 require('dotenv').config();
 
 module.exports = {

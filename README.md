@@ -36,6 +36,10 @@ npx hardhat compile
 # Deploy Contracts
 npx hardhat run ignition/modules/deploy.js --network IntersectTestnet
 
+CarbonCredit deployed to: 0xd109932a2C687F259E842CC160F13E14Da27dC01
+MockOracle deployed to: 0x55EB391D80f38F025E67f7506eA91aEBb44F6434
+CrossChainHandler deployed to: 0x0cE418fAD30F625A90D82234e9679504216c3eFa
+
 # Run Tests
 npx hardhat test
 
