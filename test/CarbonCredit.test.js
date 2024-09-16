@@ -1,23 +1,40 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("CarbonCredit", function () {
-  let CarbonCredit;
+describe("CarbonCredit Contract", function () {
   let carbonCredit;
-  let deployer;
-  let addr1;
+  let owner, addr1, addr2;
 
   beforeEach(async function () {
-    [deployer, addr1] = await ethers.getSigners();
-
-    CarbonCredit = await ethers.getContractFactory("CarbonCredit");
-    carbonCredit = await CarbonCredit.deploy();  // No need to call deployed() in ethers v6
+    [owner, addr1, addr2] = await ethers.getSigners();
+    const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
+    carbonCredit = await CarbonCredit.deploy();
   });
 
   it("Should set the correct initial supply", async function () {
     const totalSupply = await carbonCredit.totalSupply();
-    expect(totalSupply).to.equal(0n); // Use 0n for BigInt in ethers v6
+    expect(totalSupply).to.equal(0);
   });
 
-  // ... rest of the tests ...
+  it("Should allow the owner to mint tokens", async function () {
+    await carbonCredit.mint(addr1.address, 1000);
+    expect(await carbonCredit.balanceOf(addr1.address)).to.equal(1000);
+  });
+
+  it("Should not allow non-owners to mint tokens", async function () {
+    await expect(carbonCredit.connect(addr1).mint(addr1.address, 1000)).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should allow burning tokens by the owner", async function () {
+    await carbonCredit.mint(addr1.address, 1000);
+    await carbonCredit.burn(addr1.address, 500);
+    expect(await carbonCredit.balanceOf(addr1.address)).to.equal(500);
+  });
+  
+
+  it("Should allow self-burning of tokens", async function () {
+    await carbonCredit.mint(addr1.address, 1000);
+    await carbonCredit.connect(addr1).burn(addr1.address, 500);
+    expect(await carbonCredit.balanceOf(addr1.address)).to.equal(500);
+  });
 });
