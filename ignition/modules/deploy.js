@@ -1,47 +1,66 @@
-const hre = require("hardhat");
-require('dotenv').config();
-
-async function deployContract(contractName, ...args) {
-    const Contract = await hre.ethers.getContractFactory(contractName);
-    const contract = await Contract.deploy(...args);
-    await contract.waitForDeployment();
-    console.log(`${contractName} deployed to:`, await contract.getAddress());
-    return contract;
-}
+// Import required modules 
+const { ethers } = require("hardhat");
 
 async function main() {
-    try {
-        const [deployer] = await hre.ethers.getSigners();
-        console.log("Deploying contracts with the account:", await deployer.getAddress());
+    // Get the deployer's account
+    const [deployer] = await ethers.getSigners();
+    console.log(`Deploying contracts with the account: ${deployer.address}`);
 
-        // Load environment variables
-        const CCIP_ROUTER_ADDRESS = process.env.CCIP_ROUTER_ADDRESS;
-        const LINK_TOKEN_ADDRESS = process.env.LINK_TOKEN_ADDRESS;
-        const AVALANCHE_CHAIN_ID = process.env.AVALANCHE_CHAIN_ID;
-        const PRICE_FEED_ADDRESS = process.env.PRICE_FEED_ADDRESS;
-        const SUBSCRIPTION_ID = process.env.SUBSCRIPTION_ID;
-        const ORACLE_ADDRESS = process.env.ORACLE_ADDRESS;
-
-        // Deploy contracts
-        const carbonCredit = await deployContract("CarbonCredit");
-        const mockOracle = await deployContract("MockOracle", await deployer.getAddress());
-        const marketplace = await deployContract("Marketplace", await carbonCredit.getAddress(), PRICE_FEED_ADDRESS, await mockOracle.getAddress());
-        const crossChainHandler = await deployContract("CrossChainHandler", await carbonCredit.getAddress(), CCIP_ROUTER_ADDRESS);
-        const mockCrossChainHandler = await deployContract("MockCrossChainHandler", await carbonCredit.getAddress());
-        const priceUpdater = await deployContract("PriceUpdater", await marketplace.getAddress());
-
-        console.log("CCIP_ROUTER_ADDRESS:", CCIP_ROUTER_ADDRESS);
-        console.log("LINK_TOKEN_ADDRESS:", LINK_TOKEN_ADDRESS);
-        console.log("PRICE_FEED_ADDRESS:", PRICE_FEED_ADDRESS);
-
-
-        console.log("All contracts deployed successfully!");
-    } catch (error) {
-        console.error("Error in deployment:", error);
-        process.exit(1);
+    // Ensure ethers.utils is available
+    if (!ethers.utils) {
+        throw new Error('ethers.utils is not available. Check ethers.js version and import.');
     }
+
+    // Example constructor argument for CarbonCredit
+    const initialSupply = ethers.parseUnits("1000000", 18); // Adjust as needed
+
+    // Deploy CarbonCredit contract
+    const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
+    const carbonCredit = await CarbonCredit.deploy(initialSupply);
+    await carbonCredit.waitForDeployment();
+    console.log("CarbonCredit deployed to:", await carbonCredit.getAddress());
+
+    // Addresses
+    const carbonCreditAddress = carbonCredit.getAddress();
+    const routerAddress = "0xF694E193200268f9a4868e4Aa017A0118C9a8177"; // Provide the actual router address
+    const priceFeedAddress = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"; // Provide the actual price feed address
+    const mockOracleAddress = "0xd0EbC86a4f67654B654Feb0e615d7f5C139a6406"; // Provide the actual mock oracle address
+    const linkAddress = "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846"; // Provide the actual LINK token address
+
+    // Deploy CrossChainHandler contract
+    const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
+    const crossChainHandler = await CrossChainHandler.deploy(carbonCreditAddress, routerAddress);
+    await crossChainHandler.waitForDeployment();
+    console.log("CrossChainHandler deployed to:", await crossChainHandler.getAddress());
+
+    // Deploy Marketplace contract
+    const Marketplace = await ethers.getContractFactory("Marketplace");
+    const marketplace = await Marketplace.deploy(carbonCreditAddress, priceFeedAddress, mockOracleAddress);
+    await marketplace.waitForDeployment();
+    console.log("Marketplace deployed to:", await marketplace.getAddress());
+
+    // Deploy MockCrossChainHandler contract
+    const MockCrossChainHandler = await ethers.getContractFactory("MockCrossChainHandler");
+    const mockCrossChainHandler = await MockCrossChainHandler.deploy(carbonCreditAddress);
+    await mockCrossChainHandler.waitForDeployment();
+    console.log("MockCrossChainHandler deployed to:", await mockCrossChainHandler.getAddress());
+
+    // Deploy MockOracle contract
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mockOracle = await MockOracle.deploy(linkAddress);
+    await mockOracle.waitForDeployment();
+    console.log("MockOracle deployed to:", await mockOracle.getAddress());
+
+    // Deploy PriceUpdater contract
+    const PriceUpdater = await ethers.getContractFactory("PriceUpdater");
+    const priceUpdater = await PriceUpdater.deploy(marketplace.getAddress());
+    await priceUpdater.waitForDeployment();
+    console.log("PriceUpdater deployed to:", await priceUpdater.getAddress());
+
+    console.log("All contracts deployed successfully.");
 }
 
+// Run the deployment script
 main()
     .then(() => process.exit(0))
     .catch((error) => {
