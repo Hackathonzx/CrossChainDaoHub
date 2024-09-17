@@ -1,3 +1,4 @@
+
 const { ethers } = require("hardhat");
 
 async function main() {
@@ -87,10 +88,10 @@ async function main() {
      // Deploy PriceUpdater
      console.log("Deploying PriceUpdater...");
      const PriceUpdater = await hre.ethers.getContractFactory("PriceUpdater");
-     const priceUpdater = await PriceUpdater.deploy(marketplaceAddress("0x9e81F1375410AcD4141029f128Eef26C12F445De"));
-     await priceUpdater.waitForDeployment();
+     const priceUpdater = await PriceUpdater.deploy(marketplaceAddress);
+    await priceUpdater.waitForDeployment();
      const priceUpdaterAddress = await priceUpdater.getAddress();
-     console.log("PriceUpdater deployed to:", priceUpdaterAddress);
+     console.log("PriceUpdater deployed to:", await priceUpdater.getAddress());
  
      console.log("All contracts deployed successfully.");
  }

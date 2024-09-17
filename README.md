@@ -39,6 +39,10 @@ npx hardhat run ignition/modules/deploy.js --network IntersectTestnet
 CarbonCredit deployed to: 0xd109932a2C687F259E842CC160F13E14Da27dC01
 MockOracle deployed to: 0x55EB391D80f38F025E67f7506eA91aEBb44F6434
 CrossChainHandler deployed to: 0x0cE418fAD30F625A90D82234e9679504216c3eFa
+LinkToken deployed to: 0x8E98a7f5c9BBeA17d80Fc5466ab5760E46433eAC
+MockCrossChainHandler deployed to: 0xea69C2846d2Df5c2E86277f24D4a58375c78F1f4
+Marketplace deployed to: 0x9e81F1375410AcD4141029f128Eef26C12F445De
+PriceUpdater deployed to: 0x82aCA029A4dEf65790F438e0cAD2ccfF84749f91
 
 # Run Tests
 npx hardhat test
