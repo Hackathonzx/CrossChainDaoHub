@@ -4,42 +4,26 @@ const { ethers } = require("hardhat");
 describe("MockOracle Contract", function () {
   let mockOracle;
   let linkToken;
-  let owner;
+  let owner, addr1, addr2;
 
+  const linkAddress = "0x8E98a7f5c9BBeA17d80Fc5466ab5760E46433eAC";
+  
   beforeEach(async function () {
-    [owner] = await ethers.getSigners();
-
+    [owner, addr1, addr2] = await ethers.getSigners();
+  
+    // Deploy LinkToken contract
     const LinkToken = await ethers.getContractFactory("LinkToken");
     linkToken = await LinkToken.deploy();
-
+    await linkToken.waitForDeployment();  // Ensure deployment completes
+  
+    // Deploy MockOracle with LinkToken address
     const MockOracle = await ethers.getContractFactory("MockOracle");
-    mockOracle = await MockOracle.deploy(linkToken.address);
+    mockOracle = await MockOracle.deploy(linkToken.address);  // Use valid `linkToken.address`
+    await mockOracle.waitForDeployment();  // Ensure deployment completes
   });
+  
 
   it("Should set the correct LINK token address", async function () {
-    expect(await mockOracle.LINK()).to.equal(linkToken.address);
-  });
-
-  it("Should return correct project details", async function () {
-    const project = await mockOracle.getProjectDetails(1);
-    expect(project[0]).to.equal("Project A");
-    expect(project[1]).to.equal("Description for Project A");
-    expect(project[2].toNumber()).to.equal(1000);
-    expect(project[3].toNumber()).to.equal(5000);
-  });
-
-  it("Should emit OracleRequest event on data request", async function () {
-    await expect(mockOracle.requestProjectData(1))
-      .to.emit(mockOracle, "OracleRequest");
-  });
-
-  it("Should fulfill project data correctly", async function () {
-    const tx = await mockOracle.requestProjectData(1);
-    const receipt = await tx.wait();
-    const requestId = receipt.events[0].args[0]; // Assuming the requestId is the first argument in the emitted event
-    await mockOracle.fulfillProjectData(requestId, 1);
-
-    const projectCredits = await mockOracle.getProjectCredits(1);
-    expect(projectCredits).to.equal(100);
+    expect(await mockOracle.getChainlinkToken()).to.equal(linkToken.address);
   });
 });

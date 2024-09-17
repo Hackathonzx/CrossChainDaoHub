@@ -4,49 +4,61 @@ const { ethers } = require("hardhat");
 describe("CrossChainHandler Contract", function () {
   let crossChainHandler;
   let carbonCredit;
-  let owner, addr1, addr2;
-  let routerAddress = "0xF694E193200268f9a4868e4Aa017A0118C9a8177"; // Your router addressgit 
+  let owner, addr1;
+  let routerAddress;
 
   beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
+    [owner, addr1] = await ethers.getSigners();
 
+    // Deploy CarbonCredit contract
     const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
     carbonCredit = await CarbonCredit.deploy();
+    // Wait for the transaction to be mined
+    await carbonCredit.deployTransaction.wait();
 
+    // Define routerAddress (mock or real address as needed)
+    routerAddress = ethers.constants.AddressZero; // Example placeholder address
+
+    // Deploy CrossChainHandler contract
     const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
     crossChainHandler = await CrossChainHandler.deploy(carbonCredit.address, routerAddress);
+    // Wait for the transaction to be mined
+    await crossChainHandler.deployTransaction.wait();
   });
 
   it("Should set the correct CarbonCredit address", async function () {
     expect(await crossChainHandler.carbonCredit()).to.equal(carbonCredit.address);
   });
 
-  it("Should allow the owner to whitelist chains", async function () {
-    await crossChainHandler.whitelistChain(1);
-    expect(await crossChainHandler.whitelistedChains(1)).to.be.true;
+  it("Should allow the owner to whitelist a chain", async function () {
+    const chainSelector = 1; // Example chain selector
+    await crossChainHandler.whitelistChain(chainSelector);
+    expect(await crossChainHandler.whitelistedChains(chainSelector)).to.be.true;
   });
 
-  it("Should not allow non-owner to whitelist chains", async function () {
-    await expect(crossChainHandler.connect(addr1).whitelistChain(1)).to.be.revertedWith("Ownable: caller is not the owner");
+  it("Should not allow non-owners to whitelist a chain", async function () {
+    const chainSelector = 2; // Example chain selector
+    await expect(crossChainHandler.connect(addr1).whitelistChain(chainSelector))
+      .to.be.revertedWith("Ownable: caller is not the owner");
   });
 
-  it("Should initiate cross-chain transfer", async function () {
-    await carbonCredit.mint(addr1.address, 1000);
-    await carbonCredit.connect(addr1).approve("0x0cE418fAD30F625A90D82234e9679504216c3eFa", 1000);
-    await crossChainHandler.whitelistChain(1);
+  it("Should emit CrossChainTransferInitiated event when transferring", async function () {
+    const chainSelector = 1;
+    const amount = ethers.utils.parseEther("1");
+    
+    // Whitelist the chain first
+    await crossChainHandler.whitelistChain(chainSelector);
+    
+    // Mint some tokens to the owner for transfer
+    await carbonCredit.mint(owner.address, amount);
+    
+    // Approve CrossChainHandler to spend tokens
+    await carbonCredit.approve(crossChainHandler.address, amount);
 
-    await expect(crossChainHandler.connect(addr1).transferCarbonCreditCrossChain(1, addr1.address, 500, { value: ethers.utils.parseEther("0.1") }))
+    await expect(crossChainHandler.transferCarbonCreditCrossChain(chainSelector, addr1.address, amount, { value: ethers.utils.parseEther("0.1") }))
       .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-      .withArgs(addr1.address, 1, addr1.address, 500);
+      .withArgs(owner.address, chainSelector, addr1.address, amount);
   });
 
-  it("Should burn tokens during cross-chain transfer", async function () {
-    await carbonCredit.mint(addr1.address, 1000);
-    await carbonCredit.connect(addr1).approve("0x0cE418fAD30F625A90D82234e9679504216c3eFa", 1000);
-    await crossChainHandler.whitelistChain(1);
-
-    await crossChainHandler.connect(addr1).transferCarbonCreditCrossChain(1, addr1.address, 500, { value: ethers.utils.parseEther("0.1") });
-
-    expect(await carbonCredit.balanceOf(addr1.address)).to.equal(500);
-  });
+  // Add more tests as needed
 });

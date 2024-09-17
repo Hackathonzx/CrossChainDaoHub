@@ -15,7 +15,7 @@ contract CarbonCredit is ERC20, Ownable {
     }
 
     function burn(address from, uint256 amount) external {
-        require(from == msg.sender || from == owner(), "Not authorized to burn");
+        require(from == msg.sender || msg.sender == owner(), "Not authorized to burn");
         _burn(from, amount);
     }
 }
