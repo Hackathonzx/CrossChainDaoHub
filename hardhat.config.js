@@ -1,10 +1,3 @@
-// require("@nomicfoundation/hardhat-ethers");
-// require('@nomicfoundation/hardhat-toolbox');
-// const ethers = require("ethers"); // This will use v5.7.2
-// require("dotenv").config();
-// avax/usd
-// https://subnets.avax.network/pearl/testnet/rpc
-
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 //require("@nomiclabs/hardhat-ethers");
