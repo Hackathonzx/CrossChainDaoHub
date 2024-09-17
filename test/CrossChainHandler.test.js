@@ -41,18 +41,6 @@ describe("CrossChainHandler Contract", function () {
       .to.be.revertedWithCustomError(crossChainHandler, "OwnableUnauthorizedAccount");
   });
 
-  // it("Should initiate cross-chain transfer", async function () {
-  //   const amount = ethers.parseEther("100");
-  //   const feeAmount = ethers.parseEther("0.1");
-
-  //   await expect(crossChainHandler.transferCarbonCreditCrossChain(CHAIN_SELECTOR, addr1.address, amount, { value: feeAmount }))
-  //     .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-  //     .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
-
-  //   // Check if tokens were burned
-  //   expect(await carbonCredit.balanceOf(owner.address)).to.equal(ethers.parseEther("900"));
-  // });
-
   it("Should initiate cross-chain transfer", async function () {
     const amount = ethers.parseEther("100");
     const feeAmount = ethers.parseEther("0.1");
