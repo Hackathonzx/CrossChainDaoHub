@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CarbonCredit.sol";
 import "./MockOracle.sol";
+import "hardhat/console.sol";
 
 contract Marketplace is ReentrancyGuard, Ownable {
     CarbonCredit public carbonCredit;
@@ -30,10 +31,11 @@ contract Marketplace is ReentrancyGuard, Ownable {
         address _priceFeedAddress,
         address _mockOracleAddress
     ) Ownable(msg.sender) {
+        console.log("Deploying with addresses:", _carbonCreditAddress, _priceFeedAddress, _mockOracleAddress);
         carbonCredit = CarbonCredit(_carbonCreditAddress);
         priceFeed = AggregatorV3Interface(_priceFeedAddress);
         mockOracle = MockOracle(_mockOracleAddress);
-        updatePrice();
+        console.log("Constructor completed");
     }
 
     function updatePrice() public {
