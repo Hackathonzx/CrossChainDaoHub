@@ -13,12 +13,12 @@ async function main() {
     const network = await ethers.provider.getNetwork();
     console.log(`Connected to network: ${network.name}`);
 
-    // // 1. Deploy CarbonCredit contract
-    // const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
-    // const carbonCredit = await CarbonCredit.deploy();
-    // await carbonCredit.waitForDeployment();
-    // const carbonCreditAddress = await carbonCredit.getAddress();
-    // console.log("CarbonCredit deployed to:", carbonCreditAddress);
+    // 1. Deploy CarbonCredit contract
+    const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
+    const carbonCredit = await CarbonCredit.deploy();
+    await carbonCredit.waitForDeployment();
+    const carbonCreditAddress = await carbonCredit.getAddress();
+    console.log("CarbonCredit deployed to:", carbonCreditAddress);
 
     // Addresses for the other contracts
     const routerAddress = "0xF694E193200268f9a4868e4Aa017A0118C9a8177"; // Router address (change to actual one)
@@ -28,31 +28,31 @@ async function main() {
     const mockPriceFeedAddress = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
   // const mockOracleAddress = "0x55EB391D80f38F025E67f7506eA91aEBb44F6434";
 
-    // // 2. Deploy MockOracle contract (mock version for testing)
-    // const MockOracle = await ethers.getContractFactory("MockOracle");
-    // const mockOracle = await MockOracle.deploy(linkAddress);
-    // await mockOracle.waitForDeployment();
-    // const mockOracleAddress = await mockOracle.getAddress();
-    // console.log("MockOracle deployed to:", mockOracleAddress);
+    // 2. Deploy MockOracle contract (mock version for testing)
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mockOracle = await MockOracle.deploy(linkAddress);
+    await mockOracle.waitForDeployment();
+    const mockOracleAddress = await mockOracle.getAddress();
+    console.log("MockOracle deployed to:", mockOracleAddress);
 
-    // // 3. Deploy CrossChainHandler contract
-    // const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
-    // const crossChainHandler = await CrossChainHandler.deploy(carbonCreditAddress, routerAddress);
-    // await crossChainHandler.waitForDeployment();
-    // console.log("CrossChainHandler deployed to:", await crossChainHandler.getAddress());
+    // 3. Deploy CrossChainHandler contract
+    const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
+    const crossChainHandler = await CrossChainHandler.deploy(carbonCreditAddress, routerAddress);
+    await crossChainHandler.waitForDeployment();
+    console.log("CrossChainHandler deployed to:", await crossChainHandler.getAddress());
 
-    // // 4. linktoken
-    // const LinkToken = await ethers.getContractFactory("LinkToken");
-    // linkToken = await LinkToken.deploy();
-    // await linkToken.waitForDeployment();
-    // console.log("LinkToken deployed to:", await linkToken.getAddress());
+    // 4. linktoken
+    const LinkToken = await ethers.getContractFactory("LinkToken");
+    linkToken = await LinkToken.deploy();
+    await linkToken.waitForDeployment();
+    console.log("LinkToken deployed to:", await linkToken.getAddress());
 
 
-    //  // 5. Deploy MockCrossChainHandler
-    //  const MockCrossChainHandler = await ethers.getContractFactory("MockCrossChainHandler");
-    //  const mockCrossChainHandler = await MockCrossChainHandler.deploy("0xd109932a2C687F259E842CC160F13E14Da27dC01");
-    //  await mockCrossChainHandler.waitForDeployment();
-    //  console.log("MockCrossChainHandler deployed to:", await mockCrossChainHandler.getAddress());
+     // 5. Deploy MockCrossChainHandler
+     const MockCrossChainHandler = await ethers.getContractFactory("MockCrossChainHandler");
+     const mockCrossChainHandler = await MockCrossChainHandler.deploy("0xd109932a2C687F259E842CC160F13E14Da27dC01");
+     await mockCrossChainHandler.waitForDeployment();
+     console.log("MockCrossChainHandler deployed to:", await mockCrossChainHandler.getAddress());
 
      // 6. Deploy Marketplace
      console.log("Starting deployment...");
@@ -68,9 +68,9 @@ async function main() {
      // Deploy Marketplace
      console.log("Deploying Marketplace...");
      const Marketplace = await hre.ethers.getContractFactory("Marketplace");
-     const carbonCreditAddress = "0xd109932a2C687F259E842CC160F13E14Da27dC01";
+     //  const carbonCreditAddress = "0xd109932a2C687F259E842CC160F13E14Da27dC01";
      // const priceFeedAddress = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
-     const mockOracleAddress = "0x55EB391D80f38F025E67f7506eA91aEBb44F6434";
+    // const mockOracleAddress = "0x55EB391D80f38F025E67f7506eA91aEBb44F6434";
    
      console.log("Deploying with addresses:", carbonCreditAddress, priceFeedAddress, mockOracleAddress);
    
@@ -85,7 +85,7 @@ async function main() {
      const marketplaceAddress = await marketplace.getAddress();
      console.log("Marketplace deployed to:", marketplaceAddress);
    
-     // Deploy PriceUpdater
+     //7. Deploy PriceUpdater
      console.log("Deploying PriceUpdater...");
      const PriceUpdater = await hre.ethers.getContractFactory("PriceUpdater");
      const priceUpdater = await PriceUpdater.deploy(marketplaceAddress);
