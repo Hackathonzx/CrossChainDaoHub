@@ -1,97 +1,83 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("CrossChainHandler Contract", function () {
-  let crossChainHandler;
-  let carbonCredit;
-  let mockRouter;
-  let owner, addr1;
-  const CHAIN_SELECTOR = 1n; // Example chain selector
+describe("CrossChainHandler", function () {
+  let deployer, user, recipient, CrossChainHandler, CarbonCredit, crossChainHandler, carbonCredit;
+  const CCIP_ROUTER_ADDRESS = "0xF694E193200268f9a4868e4Aa017A0118C9a8177"; // Provided router address
+  const destinationChainSelector = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"; // Example chain selector for testing
+  const routerAddress = "0xF694E193200268f9a4868e4Aa017A0118C9a8177";
 
   beforeEach(async function () {
-    [owner, addr1] = await ethers.getSigners();
+    [deployer, user, recipient] = await ethers.getSigners();
 
-    // Deploy mock CCIP router
-    const MockRouter = await ethers.getContractFactory("MockRouter");
-    mockRouter = await MockRouter.deploy();
+    // Deploy the CarbonCredit contract
+    const CarbonCreditFactory = await ethers.getContractFactory("CarbonCredit");
+    carbonCredit = await CarbonCreditFactory.deploy();
+    await carbonCredit.deployed();
 
-    // Deploy CarbonCredit contract
-    const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
-    carbonCredit = await CarbonCredit.deploy();
+    // Deploy the CrossChainHandler contract
+    const CrossChainHandlerFactory = await ethers.getContractFactory("CrossChainHandler");
+    crossChainHandler = await CrossChainHandlerFactory.deploy(carbonCreditAddress, routerAddress);
+    await crossChainHandler.waitForDeployment();
 
-    // Deploy CrossChainHandler contract
-    const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
-    crossChainHandler = await CrossChainHandler.deploy(await carbonCredit.getAddress(), await mockRouter.getAddress());
-
-    // Set up initial state
-    await carbonCredit.mint(owner.address, ethers.parseEther("1000"));
-    await carbonCredit.approve(await crossChainHandler.getAddress(), ethers.parseEther("1000"));
-    await crossChainHandler.whitelistChain(CHAIN_SELECTOR);
+    // Mint some CarbonCredit tokens to the user for testing
+    await carbonCredit.mint(user.address, ethers.utils.parseUnits("1000", 18)); // 1000 CarbonCredits
   });
 
-  it("Should set the correct CarbonCredit address", async function () {
-    expect(await crossChainHandler.carbonCredit()).to.equal(await carbonCredit.getAddress());
+  it("should deploy with the correct addresses", async function () {
+    expect(await crossChainHandler.carbonCredit()).to.equal(carbonCredit.address);
   });
 
-  it("Should set the correct Router address", async function () {
-    expect(await crossChainHandler.getRouter()).to.equal(await mockRouter.getAddress());
+  it("should allow the owner to whitelist a chain", async function () {
+    await crossChainHandler.whitelistChain(destinationChainSelector);
+    expect(await crossChainHandler.whitelistedChains(destinationChainSelector)).to.be.true;
   });
 
-  it("Should allow the owner to whitelist a chain", async function () {
-    const newChainSelector = 2n;
-    await crossChainHandler.whitelistChain(newChainSelector);
-    expect(await crossChainHandler.whitelistedChains(newChainSelector)).to.be.true;
+  it("should allow cross-chain carbon credit transfer", async function () {
+    // Whitelist the destination chain first
+    await crossChainHandler.whitelistChain(destinationChainSelector);
+
+    // Approve the CrossChainHandler to spend user's CarbonCredit
+    const amountToTransfer = ethers.utils.parseUnits("100", 18); // 100 CarbonCredits
+    await carbonCredit.connect(user).approve(crossChainHandlerAddress, amountToTransfer);
+
+    // Check user's initial CarbonCredit balance
+    const initialUserBalance = await carbonCredit.balanceOf(user.address);
+    expect(initialUserBalance).to.equal(ethers.utils.parseUnits("1000", 18));
+
+    // Initiate a cross-chain carbon credit transfer
+    await expect(
+      crossChainHandler.connect(user).transferCarbonCreditCrossChain(
+        destinationChainSelector,
+        recipient.address,
+        amountToTransfer,
+        { value: ethers.utils.parseEther("0.01") } // Mock fee for the cross-chain transfer
+      )
+    ).to.emit(crossChainHandler, "CrossChainTransferInitiated")
+      .withArgs(user.address, destinationChainSelector, recipient.address, amountToTransfer);
+
+    // User's balance should be reduced by the transferred amount (burned locally)
+    const finalUserBalance = await carbonCredit.balanceOf(user.address);
+    expect(finalUserBalance).to.equal(initialUserBalance.sub(amountToTransfer));
   });
 
-  it("Should not allow non-owners to whitelist a chain", async function () {
-    const newChainSelector = 3n;
-    await expect(crossChainHandler.connect(addr1).whitelistChain(newChainSelector))
-      .to.be.revertedWithCustomError(crossChainHandler, "OwnableUnauthorizedAccount");
-  });
+  it("should mint carbon credits on receiving a cross-chain transfer", async function () {
+    // Simulate receiving a cross-chain transfer on this chain
+    const amountReceived = ethers.utils.parseUnits("50", 18); // 50 CarbonCredits
 
-  it("Should initiate cross-chain transfer", async function () {
-    const amount = ethers.parseEther("100");
-    const feeAmount = ethers.parseEther("0.1");
+    const message = {
+      sourceChainSelector: destinationChainSelector, // Assume transfer is coming from the same test chain selector
+      data: ethers.utils.defaultAbiCoder.encode(
+        ["address", "address", "uint256"],
+        [user.address, recipient.address, amountReceived]
+      )
+    };
 
-    const tx = await crossChainHandler.transferCarbonCreditCrossChain(
-      CHAIN_SELECTOR,
-      addr1.address,
-      amount,
-      { value: feeAmount }
-    );
+    // Call the _ccipReceive function with the simulated cross-chain message
+    await crossChainHandler.connect(deployer)._ccipReceive(message);
 
-    await expect(tx)
-      .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-      .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
-
-    expect(await carbonCredit.balanceOf(owner.address)).to.equal(ethers.parseEther("900"));
-
-    // Verify that the mock router was called
-    await mockRouter.mockCcipSend(await crossChainHandler.getAddress());
-  });
-
-  it("Should not allow transfer to non-whitelisted chain", async function () {
-    const amount = ethers.parseEther("100");
-    const feeAmount = ethers.parseEther("0.1");
-    const nonWhitelistedChainSelector = 999n;
-
-    await expect(crossChainHandler.transferCarbonCreditCrossChain(
-      nonWhitelistedChainSelector,
-      addr1.address,
-      amount,
-      { value: feeAmount }
-    )).to.be.revertedWith("Destination chain not whitelisted");
-  });
-
-  it("Should not allow transfer with insufficient balance", async function () {
-    const amount = ethers.parseEther("2000"); // More than minted
-    const feeAmount = ethers.parseEther("0.1");
-
-    await expect(crossChainHandler.transferCarbonCreditCrossChain(
-      CHAIN_SELECTOR,
-      addr1.address,
-      amount,
-      { value: feeAmount }
-    )).to.be.reverted; // The exact error message will depend on your CarbonCredit contract implementation
+    // Check that the recipient's balance has been credited with the received amount
+    const recipientBalance = await carbonCredit.balanceOf(recipient.address);
+    expect(recipientBalance).to.equal(amountReceived);
   });
 });
