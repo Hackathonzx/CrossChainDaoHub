@@ -48,11 +48,22 @@ describe("CrossChainHandler Contract", function () {
     // Approve the CrossChainHandler to burn tokens on behalf of the owner
     await carbonCredit.connect(owner).approve(crossChainHandler.getAddress(), amount);
 
-    await expect(crossChainHandler.transferCarbonCreditCrossChain(CHAIN_SELECTOR, addr1.address, amount, { value: feeAmount }))
+    // Use defined variables for the test
+    const destinationChainSelector = CHAIN_SELECTOR;
+    const recipient = addr1.address;
+
+    // Perform the cross-chain transfer and verify success
+    const tx = await crossChainHandler.transferCarbonCreditCrossChain(destinationChainSelector, recipient, amount, { value: feeAmount });
+    const receipt = await tx.wait();
+    expect(receipt.status).to.equal(1); // 1 indicates success
+
+    // Check the emitted event
+    await expect(tx)
       .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-      .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
+      .withArgs(owner.address, destinationChainSelector, recipient, amount);
 
     // Check if tokens were burned
     expect(await carbonCredit.balanceOf(owner.address)).to.equal(ethers.parseEther("900"));
-  });
+});
+
 });

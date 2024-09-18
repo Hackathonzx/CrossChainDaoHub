@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Marketplace Contract", function () {
-  let marketplace, carbonCredit, mockOracle;
+  let marketplace, carbonCredit, mockOracle, priceFeed;
   let owner, seller, buyer;
 
   beforeEach(async function () {
@@ -16,12 +16,12 @@ describe("Marketplace Contract", function () {
     // Deploy MockOracle contract
     const MockOracle = await ethers.getContractFactory("MockOracle");
     mockOracle = await MockOracle.deploy();
-    await mockOracle.deployed();
+    await mockOracle.waitForDeployment();
 
-    // Deploy PriceFeed contract
+    // Deploy PriceFeed contract (Ensure it has a no-argument constructor or mock it properly)
     const PriceFeed = await ethers.getContractFactory("PriceFeed");
     priceFeed = await PriceFeed.deploy();
-    await priceFeed.deployed();
+    await priceFeed.waitForDeployment();
 
     // Deploy Marketplace contract
     const Marketplace = await ethers.getContractFactory("Marketplace");
@@ -30,7 +30,7 @@ describe("Marketplace Contract", function () {
       priceFeed.address,
       mockOracle.address
     );
-    await marketplace.deployed();
+    await marketplace.waitForDeployment();
 
     // Mint tokens for seller
     await carbonCredit.mint(seller.address, ethers.utils.parseEther("1000"));
@@ -38,6 +38,7 @@ describe("Marketplace Contract", function () {
   });
 
   it("Should allow listing carbon credits", async function () {
+    // Assuming a `listCarbonCredits` function is added to the Marketplace contract
     await expect(
       marketplace.connect(seller).listCarbonCredits(ethers.utils.parseEther("100"), ethers.utils.parseEther("1"))
     )
