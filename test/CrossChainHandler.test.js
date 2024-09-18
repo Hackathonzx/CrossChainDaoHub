@@ -49,14 +49,10 @@ describe("CrossChainHandler Contract", function () {
     await carbonCredit.connect(owner).approve(crossChainHandler.getAddress(), amount);
 
     await expect(crossChainHandler.transferCarbonCreditCrossChain(CHAIN_SELECTOR, addr1.address, amount, { value: feeAmount }))
-        .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-        .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
+      .to.emit(crossChainHandler, "CrossChainTransferInitiated")
+      .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
 
     // Check if tokens were burned
     expect(await carbonCredit.balanceOf(owner.address)).to.equal(ethers.parseEther("900"));
-});
-
-
-  // Note: We can't test the receiving part without mocking the CCIP router
-  // This would require more complex setup and is beyond the scope of a simple unit test
+  });
 });

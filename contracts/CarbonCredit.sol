@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CarbonCredit is ERC20, Ownable {
     uint256 public constant MAX_SUPPLY = 1000000 * 10**18; // 1 million tokens
@@ -15,7 +15,15 @@ contract CarbonCredit is ERC20, Ownable {
     }
 
     function burn(address from, uint256 amount) external {
-        require(from == msg.sender || msg.sender == owner(), "Not authorized to burn");
-        _burn(from, amount);
+        if (from == msg.sender || msg.sender == owner()) {
+            _burn(from, amount);
+        } else {
+            uint256 currentAllowance = allowance(from, msg.sender);
+            require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
+            unchecked {
+                _approve(from, msg.sender, currentAllowance - amount);
+            }
+            _burn(from, amount);
+        }
     }
 }
