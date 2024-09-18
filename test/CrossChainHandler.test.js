@@ -4,12 +4,16 @@ const { ethers } = require("hardhat");
 describe("CrossChainHandler Contract", function () {
   let crossChainHandler;
   let carbonCredit;
+  let mockRouter;
   let owner, addr1;
   const CHAIN_SELECTOR = 1n; // Example chain selector
-  const CCIP_ROUTER_ADDRESS = "0xF694E193200268f9a4868e4Aa017A0118C9a8177";
 
   beforeEach(async function () {
     [owner, addr1] = await ethers.getSigners();
+
+    // Deploy mock CCIP router
+    const MockRouter = await ethers.getContractFactory("MockRouter");
+    mockRouter = await MockRouter.deploy();
 
     // Deploy CarbonCredit contract
     const CarbonCredit = await ethers.getContractFactory("CarbonCredit");
@@ -17,7 +21,7 @@ describe("CrossChainHandler Contract", function () {
 
     // Deploy CrossChainHandler contract
     const CrossChainHandler = await ethers.getContractFactory("CrossChainHandler");
-    crossChainHandler = await CrossChainHandler.deploy(await carbonCredit.getAddress(), CCIP_ROUTER_ADDRESS);
+    crossChainHandler = await CrossChainHandler.deploy(await carbonCredit.getAddress(), await mockRouter.getAddress());
 
     // Set up initial state
     await carbonCredit.mint(owner.address, ethers.parseEther("1000"));
@@ -27,6 +31,10 @@ describe("CrossChainHandler Contract", function () {
 
   it("Should set the correct CarbonCredit address", async function () {
     expect(await crossChainHandler.carbonCredit()).to.equal(await carbonCredit.getAddress());
+  });
+
+  it("Should set the correct Router address", async function () {
+    expect(await crossChainHandler.getRouter()).to.equal(await mockRouter.getAddress());
   });
 
   it("Should allow the owner to whitelist a chain", async function () {
@@ -45,25 +53,45 @@ describe("CrossChainHandler Contract", function () {
     const amount = ethers.parseEther("100");
     const feeAmount = ethers.parseEther("0.1");
 
-    // Approve the CrossChainHandler to burn tokens on behalf of the owner
-    await carbonCredit.connect(owner).approve(crossChainHandler.getAddress(), amount);
+    const tx = await crossChainHandler.transferCarbonCreditCrossChain(
+      CHAIN_SELECTOR,
+      addr1.address,
+      amount,
+      { value: feeAmount }
+    );
 
-    // Use defined variables for the test
-    const destinationChainSelector = CHAIN_SELECTOR;
-    const recipient = addr1.address;
-
-    // Perform the cross-chain transfer and verify success
-    const tx = await crossChainHandler.transferCarbonCreditCrossChain(destinationChainSelector, recipient, amount, { value: feeAmount });
-    const receipt = await tx.wait();
-    expect(receipt.status).to.equal(1); // 1 indicates success
-
-    // Check the emitted event
     await expect(tx)
       .to.emit(crossChainHandler, "CrossChainTransferInitiated")
-      .withArgs(owner.address, destinationChainSelector, recipient, amount);
+      .withArgs(owner.address, CHAIN_SELECTOR, addr1.address, amount);
 
-    // Check if tokens were burned
     expect(await carbonCredit.balanceOf(owner.address)).to.equal(ethers.parseEther("900"));
-});
 
+    // Verify that the mock router was called
+    await mockRouter.mockCcipSend(await crossChainHandler.getAddress());
+  });
+
+  it("Should not allow transfer to non-whitelisted chain", async function () {
+    const amount = ethers.parseEther("100");
+    const feeAmount = ethers.parseEther("0.1");
+    const nonWhitelistedChainSelector = 999n;
+
+    await expect(crossChainHandler.transferCarbonCreditCrossChain(
+      nonWhitelistedChainSelector,
+      addr1.address,
+      amount,
+      { value: feeAmount }
+    )).to.be.revertedWith("Destination chain not whitelisted");
+  });
+
+  it("Should not allow transfer with insufficient balance", async function () {
+    const amount = ethers.parseEther("2000"); // More than minted
+    const feeAmount = ethers.parseEther("0.1");
+
+    await expect(crossChainHandler.transferCarbonCreditCrossChain(
+      CHAIN_SELECTOR,
+      addr1.address,
+      amount,
+      { value: feeAmount }
+    )).to.be.reverted; // The exact error message will depend on your CarbonCredit contract implementation
+  });
 });

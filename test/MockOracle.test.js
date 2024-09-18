@@ -6,24 +6,22 @@ describe("MockOracle Contract", function () {
   let linkToken;
   let owner, addr1, addr2;
 
-  const linkAddress = "0x8E98a7f5c9BBeA17d80Fc5466ab5760E46433eAC";
-  
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
   
-    // Deploy LinkToken contract
-    const LinkToken = await ethers.getContractFactory("LinkToken");
-    linkToken = await LinkToken.deploy();
+    // Deploy Mock LINK Token contract
+    const LinkTokenFactory = await ethers.getContractFactory("LinkToken");
+    linkToken = await LinkTokenFactory.deploy();
     await linkToken.waitForDeployment();  // Ensure deployment completes
   
     // Deploy MockOracle with LinkToken address
-    const MockOracle = await ethers.getContractFactory("MockOracle");
-    mockOracle = await MockOracle.deploy(linkToken.address);  // Use valid `linkToken.address`
+    const MockOracleFactory = await ethers.getContractFactory("MockOracle");
+    mockOracle = await MockOracleFactory.deploy(linkToken.address);
     await mockOracle.waitForDeployment();  // Ensure deployment completes
   });
   
-
   it("Should set the correct LINK token address", async function () {
-    expect(await mockOracle.getChainlinkToken()).to.equal(linkToken.address);
+    // The method to get LINK token address should be adjusted according to your contract
+    expect(await mockOracle.LINK()).to.equal(linkToken.address);
   });
 });
