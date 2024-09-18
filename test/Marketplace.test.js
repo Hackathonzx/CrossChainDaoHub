@@ -9,7 +9,8 @@ describe("Carbon Credit System", function () {
   const CCIP_ROUTER_ADDRESS = "0xF694E193200268f9a4868e4Aa017A0118C9a8177";
   const LINK_TOKEN_ADDRESS = "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846";
   const PRICE_FEED_ADDRESS = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
-  const ORACLE_ADDRESS = "0xd0EbC86a4f67654B654Feb0e615d7f5C139a6406";
+  const ORACLE_ADDRESS = "0x022EEA14A6010167ca026B32576D6686dD7e85d2";
+  
 
   before(async function() {
     console.log("PRICE_FEED_ADDRESS:", PRICE_FEED_ADDRESS);
@@ -53,8 +54,13 @@ describe("Carbon Credit System", function () {
 
   describe("Marketplace", function () {
     it("Should set the correct initial values", async function () {
-      expect(await marketplace.carbonCredit()).to.equal(carbonCredit.address);
-      expect(await marketplace.mockOracle()).to.equal(ORACLE_ADDRESS);
+      try {
+        expect(await marketplace.carbonCredit()).to.equal(carbonCredit.address);
+        expect(await marketplace.mockOracle()).to.equal(ORACLE_ADDRESS);
+      } catch (error) {
+        console.error("Error in setting initial values:", error);
+        throw error;
+      }
     });
 
     it("Should allow buying carbon credits", async function () {

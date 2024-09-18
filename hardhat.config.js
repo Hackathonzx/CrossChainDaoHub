@@ -4,6 +4,7 @@ require("hardhat-deploy");
 require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-ignition");
 require('dotenv').config();
+// require("@nomiclabs/hardhat-etherscan");
 
 module.exports = {
   solidity: {

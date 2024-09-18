@@ -1,93 +1,114 @@
-## Cross-Chain Carbon Credit Marketplace
+Cross-Chain Carbon Credit Marketplace
+1. Architecture Overview
+Project Description
+The Cross-Chain Carbon Credit Marketplace is a decentralized platform designed for the buying, selling, and trading of carbon credits across multiple blockchains. By leveraging Chainlink services, including CCIP, Price Feeds, and Automation, this project aims to create a transparent, secure, and efficient marketplace for carbon credits.
 
-1. **Architecture Overview**
-**Project Description**
-The Cross-Chain Carbon Credit Marketplace is a decentralized platform that enables the buying, selling, and trading of carbon credits across multiple blockchains. The system utilizes Chainlink services for cross-chain interoperability, price feeds, and verification of carbon credits. The project aims to create a transparent, secure, and efficient marketplace for carbon credits.
+Solution Architecture
+Blockchain Choice: Avalanche for its high throughput, low transaction costs, and EVM compatibility.
+Cross-Chain Communication: Chainlink CCIP (Cross-Chain Interoperability Protocol) for seamless interaction between different blockchains.
+Price Feeds: Chainlink Price Feeds for real-time carbon credit pricing.
+Smart Contracts: A suite of smart contracts to manage carbon credits, facilitate cross-chain transactions, and update prices.
+2. Chainlink Integration
+State Changes
+All Chainlink services are integrated into the smart contracts to ensure state changes, fulfilling the requirement of using Chainlink within smart contracts.
 
-**Solution Architecture**
-- **Blockchain Choice**: Avalanche for its high throughput, low transaction costs, and EVM compatibility.
-- **Cross-Chain Communication**: Chainlink CCIP (Cross-Chain Interoperability Protocol) for seamless interaction between different blockchains.
-- **Price Feeds**: Chainlink Price Feeds for real-time carbon credit pricing.
-- **Smart Contracts**: A suite of smart contracts to manage carbon credits, facilitate cross-chain transactions, and update prices.
+Meaningful Combination
+This project utilizes a combination of Chainlink services: CCIP, Price Feeds, and Functions, showcasing a meaningful and comprehensive use of Chainlink tools.
 
-2. **Installation and Setup**
+3. Installation and Setup
 Prerequisites
 Node.js (v18 or later)
 npm or yarn
 Hardhat
 Metamask or another Web3 wallet
 Installation Steps
-Clone the Repository: git clone https://github.com/your-username/cross-chain-carbon-credit-marketplace.git
+Clone the Repository
+
+bash
+Copy code
+git clone https://github.com/your-username/cross-chain-carbon-credit-marketplace.git
 cd cross-chain-carbon-credit-marketplace
+Install Dependencies
 
-Install Dependencies: npm install
+bash
+Copy code
+npm install
+Create a .env File Add the following environment variables to your .env file:
 
-# Create a .env File 
-CPIP_ROUTER_ADDRESS=your_ccip_router_address
-LINK_TOKEN_ADDRESS=your_link_token_address
-AVALANCHE_CHAIN_ID=your_avalanche_chain_id
-PRICE_FEED_ADDRESS=your_price_feed_address
-SUBSCRIPTION_ID=your_subscription_id
-ORACLE_ADDRESS=your_oracle_address
+plaintext
+Copy code
+CCIP_ROUTER_ADDRESS=0xF694E193200268f9a4868e4Aa017A0118C9a8177
+LINK_TOKEN_ADDRESS=0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846
+AVALANCHE_URL=https://subnets.avax.network/pearl/testnet/rpc
+AVALANCHE_CHAIN_ID=1612
+PRICE_FEED_ADDRESS=0x5498BB86BC934c8D34FDA08E81D444153d0D06aD
+ORACLE_ADDRESS=0x022EEA14A6010167ca026B32576D6686dD7e85d2
+SUBSCRIPTION_ID=12407
+Avalanche_Fuji=0x022EEA14A6010167ca026B32576D6686dD7e85d2
+JOB_ID=8ced832954544a3c98543c94a51d6a8d
+Avalanche_chain_selector=14767482510784806043
+Compile Contracts
 
-# Compile Contracts
+bash
+Copy code
 npx hardhat compile
+Deploy Contracts
 
-# Deploy Contracts
+bash
+Copy code
 npx hardhat run ignition/modules/deploy.js --network IntersectTestnet
+Deployment Addresses:
 
-CarbonCredit deployed to: 0xd109932a2C687F259E842CC160F13E14Da27dC01
-MockOracle deployed to: 0x55EB391D80f38F025E67f7506eA91aEBb44F6434
-CrossChainHandler deployed to: 0x0cE418fAD30F625A90D82234e9679504216c3eFa
-LinkToken deployed to: 0x8E98a7f5c9BBeA17d80Fc5466ab5760E46433eAC
-MockCrossChainHandler deployed to: 0xea69C2846d2Df5c2E86277f24D4a58375c78F1f4
-Marketplace deployed to: 0x9e81F1375410AcD4141029f128Eef26C12F445De
-PriceUpdater deployed to: 0x82aCA029A4dEf65790F438e0cAD2ccfF84749f91
+CarbonCredit: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+LinkToken: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+MockOracle: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+CrossChainHandler: 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+MockCrossChainHandler: 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+Marketplace: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+PriceUpdater: 0x0165878A594ca255338adfa4d48449f69242Eb8F
+Run Tests
 
-# Run Tests
+bash
+Copy code
 npx hardhat test
-
-3. **Smart Contract Descriptions**
-**CarbonCredit.sol**
+4. Smart Contract Descriptions
+CarbonCredit.sol
 Description: ERC20 token contract for Carbon Credit Tokens (CCT). Manages minting and burning of tokens.
 Key Functions:
 mint(address to, uint256 amount): Mints new CCT tokens.
 burn(address from, uint256 amount): Burns CCT tokens.
-**Marketplace.sol**
+Marketplace.sol
 Description: Manages the marketplace for buying and selling carbon credits. Integrates Chainlink Price Feeds for real-time pricing.
 Key Functions:
 listCredit(address seller, uint256 amount, uint256 price): Lists carbon credits for sale.
 buyCredit(address seller, uint256 amount): Buys listed carbon credits.
-**CrossChainHandler.sol**
+CrossChainHandler.sol
 Description: Handles cross-chain transactions for carbon credits using Chainlink CCIP.
 Key Functions:
 transferCredit(address from, address to, uint256 amount): Initiates a cross-chain transfer of carbon credits.
-**MockCrossChainHandler.sol**
+MockCrossChainHandler.sol
 Description: Simulates cross-chain transfers for testing purposes.
 Key Functions:
 simulateTransfer(address from, address to, uint256 amount): Simulates a cross-chain transfer.
-**MockOracle.sol**
+MockOracle.sol
 Description: Mock oracle contract for storing and retrieving project information and verifying carbon credits.
 Key Functions:
 setCreditInfo(address creditAddress, string info): Sets information for a carbon credit.
-**PriceUpdater.sol**
+PriceUpdater.sol
 Description: Updates the price of carbon credits periodically using Chainlink Automation.
 Key Functions:
 updatePrice(): Updates the current price of carbon credits.
+5. Cross-Chain Messaging with Chainlink CCIP
+Overview
+Chainlink CCIP enables communication and transactions between different blockchains. In this project, it facilitates the transfer of carbon credits across multiple chains.
 
-4. **Cross-Chain Messaging with Chainlink CCIP**
-**Overview**
-Chainlink CCIP is used to enable communication and transactions between different blockchains. In this project, it allows for the transfer of carbon credits across multiple chains.
-
-**Implementation**
+Implementation
 Contract: CrossChainHandler.sol
 Chainlink Services: Utilizes CCIP for initiating and verifying cross-chain transactions.
-
-**Setup**
+Setup
 Deploy Chainlink CCIP Router: Ensure the CCIP Router address is set up in the .env file.
 Configure Cross-Chain Handlers: Deploy CrossChainHandler.sol with the appropriate CCIP Router address.
-
-5. **Usage Instructions**
+6. Usage Instructions
 Interacting with the Marketplace
 Listing Carbon Credits: Use the listCredit function to list your carbon credits for sale.
 Purchasing Carbon Credits: Use the buyCredit function to purchase listed carbon credits.
@@ -95,6 +116,5 @@ Cross-Chain Transfers
 Initiate Transfer: Use the transferCredit function in CrossChainHandler.sol to initiate a cross-chain transfer of carbon credits.
 Price Updates
 Update Prices: The PriceUpdater contract automatically updates prices at regular intervals.
-
-**License**
+License
 This project is open-source and licensed under the MIT License. Feel free to use, modify, and distribute the code as per the license terms.
