@@ -16,9 +16,6 @@ module.exports = {
       },
     ],
   },
-  mocha: {
-    timeout: 100000
-  },
   networks: {
     IntersectTestnet: {
       url: process.env.AVALANCHE_URL,
