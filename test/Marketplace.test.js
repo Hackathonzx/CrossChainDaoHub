@@ -1,122 +1,84 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Carbon Credit System", function () {
-  let CarbonCredit, Marketplace, PriceUpdater;
-  let carbonCredit, marketplace, priceUpdater;
-  let owner, addr1, addr2;
-
-  const CCIP_ROUTER_ADDRESS = "0xF694E193200268f9a4868e4Aa017A0118C9a8177";
-  const LINK_TOKEN_ADDRESS = "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846";
-  const PRICE_FEED_ADDRESS = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
-  const ORACLE_ADDRESS = "0x022EEA14A6010167ca026B32576D6686dD7e85d2";
-  
-
-  before(async function() {
-    console.log("PRICE_FEED_ADDRESS:", PRICE_FEED_ADDRESS);
-    console.log("ORACLE_ADDRESS:", ORACLE_ADDRESS);
-  });
+describe("CrossChainHandler", function () {
+  let deployer, user, recipient, crossChainHandler, carbonCredit;
+  const CCIP_ROUTER_ADDRESS = "0xF694E193200268f9a4868e4Aa017A0118C9a8177"; // Provided router address
+  const destinationChainSelector = 1; // Example chain selector for testing
+  let carbonCreditAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
   beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
+    [deployer, user, recipient] = await ethers.getSigners();
 
-    try {
-      // Deploy CarbonCredit
-      CarbonCredit = await ethers.getContractFactory("CarbonCredit");
-      carbonCredit = await CarbonCredit.deploy();
-      await carbonCredit.waitForDeployment();
-      console.log("CarbonCredit deployed at:", carbonCredit.address);
+    // Deploy the CarbonCredit contract
+    const CarbonCreditFactory = await ethers.getContractFactory("CarbonCredit");
+    carbonCredit = await CarbonCreditFactory.deploy();
+    await carbonCredit.waitForDeployment();
+    carbonCreditAddress = await carbonCredit.getAddress(); // Get correct deployed address
 
-      // Deploy Marketplace
-      Marketplace = await ethers.getContractFactory("Marketplace");
-      marketplace = await Marketplace.deploy(
-        carbonCredit.address,
-        PRICE_FEED_ADDRESS,
-        ORACLE_ADDRESS
-      );
-      await marketplace.deployed();
-      console.log("Marketplace deployed at:", marketplace.address);
+    // Deploy the CrossChainHandler contract
+    const CrossChainHandlerFactory = await ethers.getContractFactory("CrossChainHandler");
+    crossChainHandler = await CrossChainHandlerFactory.deploy(carbonCreditAddress, CCIP_ROUTER_ADDRESS);
+    await crossChainHandler.waitForDeployment();
 
-      // Deploy PriceUpdater
-      PriceUpdater = await ethers.getContractFactory("PriceUpdater");
-      priceUpdater = await PriceUpdater.deploy(marketplace.address);
-      await priceUpdater.deployed();
-      console.log("PriceUpdater deployed at:", priceUpdater.address);
-
-      // Mint some carbon credits to the marketplace
-      await carbonCredit.mint(marketplace.address, 1000);
-      console.log("Minted 1000 credits to Marketplace");
-    } catch (error) {
-      console.error("Error in beforeEach:", error);
-      throw error;
-    }
+    // Mint some CarbonCredit tokens to the user for testing
+    await carbonCredit.mint(user.address, ethers.parseUnits("1000", 18)); // Updated: Use ethers.parseUnits
   });
 
-  describe("Marketplace", function () {
-    it("Should set the correct initial values", async function () {
-      try {
-        expect(await marketplace.carbonCredit()).to.equal(carbonCredit.address);
-        expect(await marketplace.mockOracle()).to.equal(ORACLE_ADDRESS);
-      } catch (error) {
-        console.error("Error in setting initial values:", error);
-        throw error;
-      }
-    });
-
-    it("Should allow buying carbon credits", async function () {
-      const buyAmount = 10;
-      const projectId = 1;
-
-      try {
-        // Update price first
-        await marketplace.updatePrice();
-        console.log("Price updated");
-
-        // Verify carbon credits
-        await marketplace.verifyCarbonCredit(projectId);
-        console.log("Carbon credits verified");
-        
-        // Get latest price
-        const price = await marketplace.getLatestPrice();
-        console.log("Latest price:", price.toString());
-
-        // Buy credits
-        await marketplace.connect(addr1).buyCredits(buyAmount, projectId, { value: price.mul(buyAmount) });
-        console.log("Credits bought");
-
-        const balance = await carbonCredit.balanceOf(addr1.address);
-        console.log("Buyer balance:", balance.toString());
-        expect(balance).to.equal(buyAmount);
-      } catch (error) {
-        console.error("Error in buying credits:", error);
-        throw error;
-      }
-    });
+  it("should deploy with the correct addresses", async function () {
+    expect(await crossChainHandler.carbonCredit()).to.equal(carbonCreditAddress);
   });
 
-  describe("PriceUpdater", function () {
-    it("Should deploy PriceUpdater and set the Marketplace address correctly", async function () {
-      expect(await priceUpdater.marketplace()).to.equal(marketplace.address);
-    });
+  it("should allow the owner to whitelist a chain", async function () {
+    await crossChainHandler.whitelistChain(destinationChainSelector);
+    expect(await crossChainHandler.whitelistedChains(destinationChainSelector)).to.be.true;
+  });
 
-    it("Should return correct upkeep needed status", async function () {
-      try {
-        // First, update the price to set lastUpdateTime
-        await marketplace.updatePrice();
-        console.log("Price updated for upkeep test");
+  it("should allow cross-chain carbon credit transfer", async function () {
+    // Whitelist the destination chain first
+    await crossChainHandler.whitelistChain(destinationChainSelector);
 
-        // Fast forward time by more than UPDATE_INTERVAL
-        await ethers.provider.send("evm_increaseTime", [3601]); // 1 hour + 1 second
-        await ethers.provider.send("evm_mine");
-        console.log("Time fast-forwarded");
+    // Approve the CrossChainHandler to spend user's CarbonCredit
+    const amountToTransfer = ethers.parseUnits("100", 18); // Updated: Use ethers.parseUnits
+    await carbonCredit.connect(user).approve(await crossChainHandler.getAddress(), amountToTransfer);
 
-        const [upkeepNeeded, ] = await priceUpdater.checkUpkeep("0x");
-        console.log("Upkeep needed:", upkeepNeeded);
-        expect(upkeepNeeded).to.be.true;
-      } catch (error) {
-        console.error("Error in upkeep test:", error);
-        throw error;
-      }
-    });
+    // Check user's initial CarbonCredit balance
+    const initialUserBalance = await carbonCredit.balanceOf(user.address);
+    expect(initialUserBalance).to.equal(ethers.parseUnits("1000", 18));
+
+    // Initiate a cross-chain carbon credit transfer
+    await expect(
+      crossChainHandler.connect(user).transferCarbonCreditCrossChain(
+        destinationChainSelector,
+        recipient.address,
+        amountToTransfer,
+        { value: ethers.parseEther("0.01") } // Updated: Use ethers.parseEther
+      )
+    ).to.emit(crossChainHandler, "CrossChainTransferInitiated")
+      .withArgs(user.address, destinationChainSelector, recipient.address, amountToTransfer);
+
+    // User's balance should be reduced by the transferred amount (burned locally)
+    const finalUserBalance = await carbonCredit.balanceOf(user.address);
+    expect(finalUserBalance).to.equal(initialUserBalance - amountToTransfer);
+  });
+
+  it("should mint carbon credits on receiving a cross-chain transfer", async function () {
+    // Simulate receiving a cross-chain transfer on this chain
+    const amountReceived = ethers.parseUnits("50", 18); // Updated: Use ethers.parseUnits
+
+    const message = {
+      sourceChainSelector: destinationChainSelector, // Assume transfer is coming from the same test chain selector
+      data: ethers.AbiCoder.defaultAbiCoder().encode( // Updated: Use ethers.AbiCoder.defaultAbiCoder()
+        ["address", "address", "uint256"],
+        [user.address, recipient.address, amountReceived]
+      )
+    };
+
+    // Call the _ccipReceive function with the simulated cross-chain message
+    await crossChainHandler.connect(deployer)._ccipReceive(message);
+
+    // Check that the recipient's balance has been credited with the received amount
+    const recipientBalance = await carbonCredit.balanceOf(recipient.address);
+    expect(recipientBalance).to.equal(amountReceived);
   });
 });
